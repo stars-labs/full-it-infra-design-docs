@@ -6,11 +6,11 @@ sidebar_position: 4
 
 ## 设计原则
 
-- **简洁实用**：50人规模，无需复杂三层架构
-- **统一认证**：RADIUS集中认证，802.1X接入控制
-- **无线优先**：以WiFi为主，有线为辅
-- **安全可控**：访客隔离，访客网络与办公网络分离
-- **易于管理**：统一管理平台，可视化运维
+- **分区管理**：核心区（认证+审计）与普通区（普通WiFi）分离
+- **RADIUS认证**：核心区802.1X统一认证
+- **安全审计**：核心区Port Mirror + DLP流量审计
+- **简洁实用**：50人规模，适度简化
+- **访客隔离**：访客网络与办公网络完全隔离
 
 ## 网络架构总览（50人规模）
 
@@ -21,72 +21,182 @@ graph TB
         ROUTER[企业级路由器<br/>VPN/NAT/防火墙]
     end
 
-    subgraph "核心接入区[RADIUS认证]"
-        SWITCH[8口PoE交换机<br/>USW-Lite-8-PoE / SG2008P]
+    subgraph "核心接入区[RADIUS认证+审计]"
+        CORE_SWITCH[8口PoE交换机<br/>USW-Lite-8-PoE / SG2008P]
         RADIUS[RADIUS服务器<br/>FreeIPA/Casdoor]
-        AP1[无线AP 1<br/>UniFi U6-LR]
-        AP2[无线AP 2<br/>UniFi U6-LR]
-        AP3[无线AP 3<br/>UniFi U6-LR]
+        TAP[流量采集设备<br/>Port Mirror]
+        DLP[DLP审计服务器<br/>数据防泄漏]
+        MON[监控服务器<br/>日志分析]
+        AP_CORE[无线AP 1-2<br/>核心区WiFi 802.1X]
+    end
+
+    subgraph "普通接入区[普通WiFi]"
+        SWITCH2[普通交换机]
+        AP_GUEST[无线AP 3-4<br/>普通WiFi]
+        PC_GUEST[访客设备]
     end
 
     subgraph "服务器区"
         FILE[文件服务器<br/>NAS]
-        AUTH[认证服务器<br/>FreeIPA]
         BACKUP[备份存储]
     end
 
-    subgraph "终端设备"
-        PC1[办公PC]
-        PC2[办公PC]
-        LAPTOP[笔记本]
+    subgraph "认证终端"
+        PC1[办公PC 802.1X]
+        LAPTOP[笔记本 802.1X]
         PHONE[IP电话]
     end
 
-    %% 连接关系
+    %% 边界连接
     ISP --> ROUTER
-    ROUTER --> SWITCH
-    SWITCH --> AP1
-    SWITCH --> AP2
-    SWITCH --> AP3
-    SWITCH --> PC1
-    SWITCH --> PC2
-    SWITCH --> PHONE
-    SWITCH --> AUTH
-    SWITCH --> FILE
-    SWITCH --> BACKUP
+    ROUTER --> CORE_SWITCH
+    ROUTER --> SWITCH2
+
+    %% 核心区连接
+    CORE_SWITCH --> RADIUS
+    CORE_SWITCH --> TAP
+    TAP --> DLP
+    TAP --> MON
+    CORE_SWITCH --> AP_CORE
+    CORE_SWITCH --> PC1
+    CORE_SWITCH --> LAPTOP
+    CORE_SWITCH --> PHONE
+    CORE_SWITCH --> FILE
+    CORE_SWITCH --> BACKUP
+
+    %% 普通区连接
+    SWITCH2 --> AP_GUEST
+    SWITCH2 --> PC_GUEST
 
     %% RADIUS认证流量
-    AP1 -.->|802.1X| RADIUS
-    AP2 -.->|802.1X| RADIUS
-    AP3 -.->|802.1X| RADIUS
+    AP_CORE -.->|802.1X| RADIUS
     PC1 -.->|802.1X| RADIUS
-    PC2 -.->|802.1X| RADIUS
+    LAPTOP -.->|802.1X| RADIUS
+
+    %% Port Mirror流量
+    CORE_SWITCH ==Mirror==> TAP
 
     %% 样式
-    style SWITCH fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style CORE_SWITCH fill:#ffcccc,stroke:#ff0000,stroke-width:2px
     style RADIUS fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style TAP fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style DLP fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style MON fill:#ffcccc,stroke:#ff0000,stroke-width:2px
 ```
 
-## 设备选型（50人规模）
+## 区域划分说明
 
-### 核心设备清单
+### 核心接入区（审计区域）
 
-| 设备 | 型号 | 数量 | 单价 | 小计 | 用途 |
-|------|------|------|------|------|------|
-| 企业级路由器 | UniFi Dream Machine / ER-X | 1 | ¥2000 | ¥2000 | VPN/NAT/防火墙 |
-| PoE交换机 | USW-Lite-8-PoE / SG2008P | 1 | ¥1000 | ¥1000 | 8口PoE供电 |
-| 无线AP | UniFi U6-LR | 3 | ¥1500 | ¥4500 | WiFi 6覆盖 |
-| RADIUS服务器 | 虚拟机 | 1 | - | - | 统一认证 |
-| NAS存储 | 群晖DS220+ | 1 | ¥3000 | ¥3000 | 文件共享 |
+| 设备 | 用途 | 认证方式 | 审计 |
+|------|------|----------|------|
+| PC/笔记本 | 员工办公设备 | 802.1X/RADIUS | Port Mirror → DLP |
+| IP电话 | 语音通信 | 802.1X/RADIUS | 记录 |
+| 核心区AP | 管理区域WiFi | 802.1X/RADIUS | Port Mirror → DLP |
+| 文件服务器 | 敏感数据存储 | IP白名单 | 全流量审计 |
 
-### 预算参考
+### 普通接入区（普通区域）
 
-| 类别 | 预算范围 |
-|------|----------|
-| 网络设备 | ¥10,000-15,000 |
-| 无线覆盖 | ¥4,000-6,000 |
-| 服务器/NAS | ¥3,000-5,000 |
-| **总计** | **¥17,000-26,000** |
+| 设备 | 用途 | 认证方式 | 审计 |
+|------|------|----------|------|
+| 访客AP | 来访人员 | Portal认证 | 仅日志 |
+| 普通PC | 临时设备 | MAC认证 | 仅记录 |
+
+## Port Mirror 流量审计设计
+
+### 核心区流量镜像配置
+
+```bash
+# 核心交换机配置（以TP-Link SG2008P为例）
+
+# 镜像所有核心区流量到TAP设备
+observe-port 1 interface GigabitEthernet0/0/8
+
+# 镜像办公PC上行流量
+port-mirroring to observe-port 1 inbound GigabitEthernet0/0/1
+port-mirroring to observe-port 1 outbound GigabitEthernet0/0/1
+
+# 镜像服务器区流量
+port-mirroring to observe-port 1 inbound GigabitEthernet0/0/6
+port-mirroring to observe-port 1 outbound GigabitEthernet0/0/6
+
+# 镜像核心WiFi流量
+port-mirroring to observe-port 1 inbound GigabitEthernet0/0/3
+port-mirroring to observe-port 1 outbound GigabitEthernet0/0/3
+```
+
+### 镜像策略表
+
+| 镜像源端口 | 用途 | 审计内容 | 保留期限 |
+|------------|------|----------|----------|
+| GE0/0/1 | 办公PC 1 | 文件传输、网页 | 90天 |
+| GE0/0/2 | 办公PC 2 | 文件传输、网页 | 90天 |
+| GE0/0/3 | 核心AP | 无线流量 | 90天 |
+| GE0/0/6 | 文件服务器 | SMB/NFS访问 | 180天 |
+| GE0/0/7 | 认证服务器 | RADIUS认证日志 | 180天 |
+
+## DLP数据防泄漏设计
+
+### DLP部署架构
+
+```mermaid
+graph LR
+    subgraph "核心交换机"
+        SWITCH[核心交换机<br/>Port Mirror]
+    end
+
+    subgraph "流量采集"
+        TAP[流量采集设备<br/>TAP/SPAN]
+    end
+
+    subgraph "DLP分析平台"
+        DLP[DLP服务器<br/>内容检测引擎]
+        DB[特征库<br/>敏感数据指纹]
+        ENGINE[检测引擎<br/>正则/机器学习]
+    end
+
+    subgraph "响应处置"
+        BLOCK[阻断设备<br/>防火墙联动]
+        ALERT[告警系统<br/>邮件/短信]
+        LOG[审计日志<br///合规留存]
+    end
+
+    SWITCH ==Mirror==> TAP
+    TAP -->|镜像流量| DLP
+    DLP -->|特征匹配| DB
+    DLP -->|深度检测| ENGINE
+    ENGINE -->|命中策略| BLOCK
+    ENGINE -->|告警事件| ALERT
+    ENGINE -->|审计记录| LOG
+```
+
+### DLP检测规则
+
+| 规则类型 | 检测内容 | 动作 |
+|----------|----------|------|
+| **敏感信息** | 身份证号、银行卡号、手机号 | 阻断+告警 |
+| **代码泄露** | Git地址、API Key、Token | 阻断+告警 |
+| **设计图纸** | CAD文件、DWG格式 | 阻断+审计 |
+| **商业机密** | 合同、财务数据 | 阻断+告警+日志 |
+| **病毒文件** | 可执行文件、恶意脚本 | 阻断 |
+
+### DLP服务器配置
+
+```bash
+# DLP服务器网络配置
+IP: 192.168.1.200/24
+Gateway: 192.168.1.1
+Management: 192.168.1.200:8443
+
+# 监控网卡（只读）
+Interface: eth1 (连接TAP设备)
+Mode: Passive (不转发流量)
+
+# 联动配置
+Firewall: 192.168.1.1
+API Key: dlp_api_key_xxxxx
+Block Mode: 自动阻断
+```
 
 ## RADIUS认证设计
 
@@ -95,25 +205,24 @@ graph TB
 ```mermaid
 graph LR
     subgraph "用户终端"
-        USER[用户设备<br/>PC/笔记本/手机]
+        USER[办公设备<br/>PC/笔记本]
     end
 
     subgraph "接入设备"
-        AP[无线AP]
-        SWITCH[PoE交换机]
+        AP[核心区AP]
+        SWITCH[核心交换机]
     end
 
     subgraph "认证服务器"
-        RADIUS[RADIUS服务器<br/>FreeIPA/Casdoor]
+        RADIUS[RADIUS服务器<br/>FreeIPA]
         LDAP[LDAP目录]
-        AD[AD域控]
     end
 
     USER -->|WiFi 802.1X| AP
-    AP -->|RADIUS Access-Request| RADIUS
-    SWITCH -->|RADIUS Access-Request| RADIUS
-    RADIUS -->|LDAP查询| LDAP
-    RADIUS -->|AD查询| AD
+    USER -->|有线 802.1X| SWITCH
+    AP -->|RADIUS| RADIUS
+    SWITCH -->|RADIUS| RADIUS
+    RADIUS -->|查询| LDAP
 ```
 
 ### FreeIPA RADIUS配置
@@ -122,147 +231,93 @@ graph LR
 # 安装FreeIPA
 ipa-server-install --hostname=auth.example.com \
   --realm=EXAMPLE.COM \
-  --domain=example.com \
-  --ds-password=xxxxxx \
-  --admin-password=xxxxxx
-
-# 安装RADIUS组件
-ipa-server-install --enable-dns
-yum install -y freeipa-server-trust-ad
+  --domain=example.com
 
 # 配置RADIUS客户端
 ipa-client-install --enable-dns
+
+# 配置RADIUS策略
+ipa radiusproxy-add freeipa-proxy --server=auth.example.com --secret=your_secret
+
+# 添加认证策略
+ipa hostgroup-add --desc="核心区设备" core-devices
+ipa hostgroup-add-member core-devices --hosts=ap1.example.com
+ipa netgroup-add core-network --desc="核心网络"
 ```
 
-### 交换机RADIUS配置（以TP-Link SG2008P为例）
+### 交换机RADIUS配置
 
 ```bash
-# 配置RADIUS服务器
+# TP-Link SG2008P
 radius-server ip 192.168.1.100 port 1812 key your_shared_secret
-
-# 启用802.1X认证
 dot1x authentication-method eap
-
-# 配置认证域
 authentication dot1x domain example.com
 
-# 端口认证配置
+# 核心区端口启用802.1X
 interface GigabitEthernet 1/0/1
   dot1x port-control auto
   dot1x re-authenticate
+  port-security max 1
 ```
 
-### 无线AP RADIUS配置（以UniFi为例）
+## 设备选型（50人规模）
 
-```bash
-# UniFi Controller中配置
-# Settings -> WiFi -> Edit Wireless Network
+### 核心设备清单
 
-# 无线网络设置
-Name: StarsLabs-Office
-Security: WPA Enterprise (802.1X)
+| 设备 | 型号 | 数量 | 单价 | 小计 | 用途 |
+|------|------|------|------|------|------|
+| 企业级路由器 | UniFi Dream Machine | 1 | ¥2000 | ¥2000 | VPN/NAT/防火墙 |
+| 核心PoE交换机 | USW-Lite-8-PoE / SG2008P | 1 | ¥1000 | ¥1000 | 核心区PoE供电 |
+| 普通交换机 | TL-SG1005D | 1 | ¥300 | ¥300 | 普通区接入 |
+| 核心区AP | UniFi U6-LR | 2 | ¥1500 | ¥3000 | 核心区802.1X WiFi |
+| 普通区AP | UniFi U6-Lite | 2 | ¥800 | ¥1600 | 普通WiFi |
+| RADIUS服务器 | 虚拟机 | 1 | - | - | 统一认证 |
+| DLP服务器 | 虚拟机 | 1 | - | - | 流量审计 |
+| NAS存储 | 群晖DS220+ | 1 | ¥3000 | ¥3000 | 文件共享 |
 
-# RADIUS服务器
-RADIUS Server: 192.168.1.100
-RADIUS Port: 1812
-Shared Secret: your_shared_secret
+### 预算参考
 
-# 认证服务器选择
-Authentication Method: EAP-TTLS
-Inner Auth: PAP
-```
-
-### 用户认证流程
-
-```mermaid
-sequenceDiagram
-    participant User as 用户
-    participant AP as 无线AP
-    participant RADIUS as RADIUS服务器
-    participant LDAP as LDAP目录
-
-    User->>AP: 连接WiFi
-    AP->>User: EAP-Identity请求
-    User->>AP: EAP-Response(Identity)
-    AP->>RADIUS: Access-Request(Identity)
-    RADIUS->>LDAP: 查询用户信息
-    LDAP-->>RADIUS: 用户存在
-    RADIUS->>User: EAP-Request(Challenge)
-    User->>AP: EAP-Response(Challenge)
-    AP->>RADIUS: Access-Request(Credentials)
-    RADIUS->>LDAP: 验证密码
-    LDAP-->>RADIUS: 验证通过
-    RADIUS-->>AP: Access-Accept
-    AP-->>User: 连接成功
-```
+| 类别 | 预算范围 |
+|------|----------|
+| 网络设备（核心+普通） | ¥8,000-12,000 |
+| 无线覆盖（4 AP） | ¥5,000-7,000 |
+| 服务器（虚拟机） | ¥0（已有） |
+| NAS存储 | ¥3,000-5,000 |
+| **总计** | **¥16,000-24,000** |
 
 ## IP地址规划
 
-### 地址段分配（50人规模）
-
 | 网段 | 用途 | 容量 | 网关 |
 |------|------|------|------|
-| 192.168.1.0/24 | 办公网络 | 200+ | 192.168.1.1 |
+| 192.168.1.0/24 | 核心区（认证+审计） | 200+ | 192.168.1.1 |
 | 192.168.2.0/24 | 服务器区 | 50 | 192.168.2.1 |
-| 192.168.3.0/24 | 访客网络 | 50 | 192.168.3.1 |
-
-### VLAN划分
-
-| VLAN ID | 名称 | 网段 | 用途 |
-|---------|------|------|------|
-| 10 | OFFICE | 192.168.1.0/24 | 办公设备 |
-| 20 | SERVERS | 192.168.2.0/24 | 服务器 |
-| 30 | GUEST | 192.168.3.0/24 | 访客WiFi |
+| 192.168.3.0/24 | 普通区（访客） | 50 | 192.168.3.1 |
 
 ## 无线网络设计
 
 ### WiFi覆盖规划
 
-| 区域 | AP数量 | SSID | 认证方式 | 备注 |
+| 区域 | AP数量 | SSID | 认证方式 | 审计 |
 |------|--------|------|----------|------|
-| 开放办公区 | 2 | StarsLabs-Office | 802.1X/RADIUS | 员工使用 |
-| 会议室 | 1 | StarsLabs-Office | 802.1X/RADIUS | 员工使用 |
-| 公共区域 | 1 | StarsLabs-Guest | Portal认证 | 访客隔离 |
+| 核心办公区 | 2 | StarsLabs-Secure | 802.1X/RADIUS | Port Mirror → DLP |
+| 会议室 | 1 | StarsLabs-Secure | 802.1X/RADIUS | Port Mirror → DLP |
+| 公共区域 | 2 | StarsLabs-Guest | Portal认证 | 仅日志 |
 
 ### WiFi配置要点
 
 ```bash
-# UniFi AP配置
-# 2.4GHz用于IoT设备
-# 5GHz用于办公设备
-# 6GHz (WiFi 6E) 用于高性能需求
+# 核心区AP配置
+SSID: StarsLabs-Secure
+Security: WPA Enterprise (802.1X)
+RADIUS: 192.168.1.100:1812
+VLAN: 10
 
-Radio Settings:
-- 2.4GHz: Channel 1/6/11 (自动)
-- 5GHz: Channel 36/40/44/48/149/153 (自动)
-- 6GHz: Channel 1-93 (自动)
-
-功率设置:
-- 2.4GHz: 17 dBm
-- 5GHz: 22 dBm
-- 6GHz: 24 dBm
-```
-
-## 访客网络隔离
-
-### 访客网络配置
-
-```bash
-# 创建访客VLAN
-vlan 30
-name GUEST
-
-# 访客网络隔离
-interface Vlanif30
- ip address 192.168.3.1 255.255.255.0
- ip address 192.168.3.254 255.255.255.0 secondary
- traffic-filter inbound ACL-GUEST-ISOLATE
-
-# ACL配置
-acl number 3001
- rule 10 deny ip source 192.168.3.0 0.0.0.255 destination 192.168.1.0 0.0.0.255
- rule 20 deny ip source 192.168.3.0 0.0.0.255 destination 192.168.2.0 0.0.0.255
- rule 30 permit ip source any
+# 普通区AP配置
+SSID: StarsLabs-Guest
+Security: WPA2-PSK
+Isolation: 启用
+VLAN: 30
+Captive Portal: 启用
 ```
 
 ## 网络监控
@@ -271,15 +326,7 @@ acl number 3001
 
 | 指标 | 阈值 | 告警方式 |
 |------|------|----------|
-| AP在线率 | 低于100% | 邮件 |
-| 客户端连接数 | 超过30/AP | 通知 |
-| 带宽利用率 | 超过80% | 通知 |
+| 核心区AP在线 | 低于100% | 邮件 |
+| DLP告警 | 任何命中 | 即时通知 |
 | 认证失败率 | 超过5% | 告警 |
-
-### 推荐监控平台
-
-| 方案 | 特点 | 成本 |
-|------|------|------|
-| UniFi Network | UniFi设备原生支持 | 免费 |
-| Zabbix | 开源强大 | 免费 |
-| PRTG | 简单易用 | 付费 |
+| 访客网络使用 | 异常流量 | 通知 |
