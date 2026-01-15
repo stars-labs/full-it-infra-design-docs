@@ -18,8 +18,20 @@ sidebar_position: 3
 
 | 品牌 | 型号 | 产品图片 | 价格(参考) | 适用场景 |
 |------|------|----------|------------|----------|
-| Ubiquiti | USW-Lite-8-PoE | ![UniFi](https://sg.store.ui.com/sg/en/products/usw-lite-8-poe) | ~$155 | 小微企业/家庭办公 |
-| TP-Link | SG2008P | ![Omada](https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg2008p/) | ~$130 | 中小企业/分支办公室 |
+| Ubiquiti | [USW-Lite-8-PoE](https://sg.store.ui.com/sg/en/products/usw-lite-8-poe) | - | ~$155 | 小微企业/家庭办公 |
+| TP-Link | [SG2008P](https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg2008p/) | - | ~$130 | 中小企业/分支办公室 |
+
+### 产品图片展示
+
+#### Ubiquiti USW-Lite-8-PoE
+- **产品链接**: [https://sg.store.ui.com/sg/en/products/usw-lite-8-poe](https://sg.store.ui.com/sg/en/products/usw-lite-8-poe)
+- 8端口Layer 2 PoE交换机，无风扇静音设计
+- 52W PoE预算，外接60W电源适配器
+
+#### TP-Link SG2008P
+- **产品链接**: [https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg2008p/](https://www.omadanetworks.com/us/business-networking/omada-switch-access/sg2008p/)
+- 8端口千兆智能PoE交换机，4端口PoE+
+- 62W PoE预算，支持云端集中管理
 
 ### 详细规格对比
 
