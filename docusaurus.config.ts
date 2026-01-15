@@ -5,8 +5,8 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-  title: 'My Site',
-  tagline: 'Dinosaurs are cool',
+  title: 'Stars Labs IT 基础架构设计文档',
+  tagline: '全面的企业IT基础设施规划与实施方案',
   favicon: 'img/favicon.ico',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
@@ -62,9 +62,9 @@ const config: Config = {
       respectPrefersColorScheme: true,
     },
     navbar: {
-      title: 'My Site',
+      title: 'Stars Labs IT 架构',
       logo: {
-        alt: 'My Site Logo',
+        alt: 'Stars Labs Logo',
         src: 'img/logo.svg',
       },
       items: [
@@ -72,11 +72,10 @@ const config: Config = {
           type: 'docSidebar',
           sidebarId: 'tutorialSidebar',
           position: 'left',
-          label: 'Tutorial',
+          label: '文档',
         },
-        
         {
-          href: 'https://github.com/facebook/docusaurus',
+          href: 'https://github.com/stars-labs/full-it-infra-design-docs',
           label: 'GitHub',
           position: 'right',
         },
@@ -86,43 +85,33 @@ const config: Config = {
       style: 'dark',
       links: [
         {
-          title: 'Docs',
+          title: '文档',
           items: [
             {
-              label: 'Tutorial',
+              label: '项目简介',
               to: '/docs/intro',
             },
-          ],
-        },
-        {
-          title: 'Community',
-          items: [
             {
-              label: 'Stack Overflow',
-              href: 'https://stackoverflow.com/questions/tagged/docusaurus',
+              label: 'IT 基础架构设计',
+              to: '/docs/it-infra-design',
             },
             {
-              label: 'Discord',
-              href: 'https://discordapp.com/invite/docusaurus',
-            },
-            {
-              label: 'X',
-              href: 'https://x.com/docusaurus',
+              label: '交换机选型',
+              to: '/docs/switch-selection',
             },
           ],
         },
         {
-          title: 'More',
+          title: '资源',
           items: [
-            
             {
               label: 'GitHub',
-              href: 'https://github.com/facebook/docusaurus',
+              href: 'https://github.com/stars-labs/full-it-infra-design-docs',
             },
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} My Project, Inc. Built with Docusaurus.`,
+      copyright: `Copyright © ${new Date().getFullYear()} Stars Labs. Built with Docusaurus.`,
     },
     prism: {
       theme: prismThemes.github,
