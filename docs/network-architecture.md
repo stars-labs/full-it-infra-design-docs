@@ -16,55 +16,144 @@ sidebar_position: 4
 
 ```mermaid
 graph TB
-    subgraph "Internet"
-        ISP1[ISP1 电信]
-        ISP2[ISP2 联通]
-    end
-    
-    subgraph "防火墙区"
+    subgraph "Internet 边界"
+        ISP1[电信 ISP]
+        ISP2[联通 ISP]
         FW[企业级防火墙]
+        IPS[入侵防御系统 IPS]
     end
-    
-    subgraph "核心层"
-        CORE1[核心交换机1]
-        CORE2[核心交换机2]
+
+    subgraph "核心保密区域[安全监控区]"
+        CORE1[核心交换机1<br/>L3路由/MSTP/VRRP]
+        CORE2[核心交换机2<br/>L3路由/MSTP/VRRP]
+        MON[监控审计服务器<br/>日志分析/异常检测]
+        DLP[DLP服务器<br/>数据防泄漏/内容审计]
+        TAP[流量采集设备<br/>Port Mirror/SPAN]
     end
-    
-    subgraph "汇聚层"
-        AGG1[汇聚交换机1]
-        AGG2[汇聚交换机2]
-        AGG3[汇聚交换机3]
-        AGG4[汇聚交换机4]
+
+    subgraph "汇聚层[接入控制]"
+        AGG1[汇聚交换机1<br/>VLAN间路由/ACL]
+        AGG2[汇聚交换机2<br/>VLAN间路由/ACL]
+        AGG3[汇聚交换机3<br/>PoE供电/AP管理]
+        AGG4[汇聚交换机4<br/>PoE供电/AP管理]
     end
-    
-    subgraph "接入层"
-        ACC1[接入交换机1]
-        ACC2[接入交换机2]
-        ACC3[接入交换机3]
-        ACC4[接入交换机4]
+
+    subgraph "接入层[终端接入]"
+        ACC1[接入交换机1<br/>802.1X认证/PoE]
+        ACC2[接入交换机2<br/>802.1X认证/PoE]
+        ACC3[接入交换机3<br/>802.1X认证/PoE]
+        ACC4[接入交换机4<br/>802.1X认证/PoE]
     end
-    
+
     subgraph "服务器区"
-        SERVER[服务器]
-        STORAGE[存储设备]
+        SRV1[应用服务器]
+        SRV2[数据库服务器]
+        SRV3[文件服务器]
+        NAS[NAS存储]
     end
-    
+
+    subgraph "终端设备"
+        PC1[办公PC]
+        PC2[研发PC]
+        AP1[无线AP]
+        IPPhone[IP电话]
+        IPcam[IP摄像头]
+    end
+
+    %% 边界连接
     ISP1 --> FW
     ISP2 --> FW
-    FW --> CORE1
-    FW --> CORE2
-    CORE1 <==> CORE2
+    FW --> IPS
+    IPS --> CORE1
+    IPS --> CORE2
+
+    %% 核心层互联
+    CORE1 <==>&lt;==&gt; CORE2
+    CORE1 --> TAP
+    CORE2 --> TAP
+    TAP --> MON
+    TAP --> DLP
+
+    %% 核心到汇聚
     CORE1 --> AGG1
     CORE1 --> AGG2
     CORE2 --> AGG3
     CORE2 --> AGG4
+
+    %% 汇聚到接入
     AGG1 --> ACC1
     AGG1 --> ACC2
     AGG3 --> ACC3
     AGG3 --> ACC4
-    AGG2 --> SERVER
-    AGG2 --> STORAGE
+
+    %% 服务器连接
+    AGG2 --> SRV1
+    AGG2 --> SRV2
+    AGG2 --> SRV3
+    AGG2 --> NAS
+
+    %% 终端连接
+    ACC1 --> PC1
+    ACC1 --> PC2
+    ACC2 --> AP1
+    ACC2 --> IPPhone
+    ACC2 --> IPcam
+
+    %% 汇聚到AP
+    AGG3 --> AP1
+    AGG4 --> AP1
+
+    %% 保密区域流量镜像
+    style CORE1 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style CORE2 fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style TAP fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style MON fill:#ffcccc,stroke:#ff0000,stroke-width:2px
+    style DLP fill:#ffcccc,stroke:#ff0000,stroke-width:2px
 ```
+
+## 核心保密区域设计
+
+### 区域概述
+
+核心保密区域是网络的核心枢纽，承担以下关键职责：
+
+| 组件 | 功能 | 重要性 |
+|------|------|--------|
+| **核心交换机** | 三层路由、MSTP防环、VRRP冗余 | 核心 |
+| **流量采集(TAP)** | Port Mirror镜像关键流量 | 监控基础 |
+| **DLP服务器** | 数据防泄漏、内容审计 | 安全核心 |
+| **监控审计服务器** | 日志分析、异常检测、告警 | 运维核心 |
+
+### Port Mirror 配置
+
+在核心交换机上配置流量镜像，将关键流量复制到DLP和监控系统：
+
+```bash
+# 镜像服务器区流量到DLP
+observe-port 1 interface GigabitEthernet0/0/24
+ port-mirroring to observe-port 1 inbound GigabitEthernet0/0/1
+ port-mirroring to observe-port 1 outbound GigabitEthernet0/0/1
+
+# 镜像互联网出口流量
+observe-port 2 interface GigabitEthernet0/0/23
+ port-mirroring to observe-port 2 inbound GigabitEthernet0/0/10
+ port-mirroring to observe-port 2 outbound GigabitEthernet0/0/10
+
+# 镜像管理网流量
+observe-port 3 interface GigabitEthernet0/0/22
+ port-mirroring to observe-port 3 inbound GigabitEthernet0/0/5
+ port-mirroring to observe-port 3 outbound GigabitEthernet0/0/5
+```
+
+### 流量监控策略
+
+| 监控对象 | 镜像源 | 目的 | 审计内容 |
+|----------|--------|------|----------|
+| 服务器区 | 核心交换机 uplink | DLP | 数据外发、敏感文件传输 |
+| 互联网出口 | 防火墙 uplink | DLP | 恶意URL、敏感数据外泄 |
+| 管理网络 | 核心交换机管理口 | 监控系统 | 异常登录、配置变更 |
+| 数据库 | 数据库服务器端口 | DLP | SQL查询、批量导出 |
+| 研发区 | 汇聚交换机 | DLP | 代码外发、图纸外传 |
 
 ## IP地址规划
 
@@ -198,3 +287,70 @@ acl number 3002
 - 流量超过80%阈值：预警
 - 链路错误率>0.1%：告警
 - 设备温度>50℃：预警
+
+## DLP数据防泄漏方案
+
+### DLP部署架构
+
+```mermaid
+graph LR
+    subgraph "流量来源"
+        TAP[流量采集设备<br/>Port Mirror]
+    end
+
+    subgraph "DLP分析平台"
+        DLP[DLP服务器<br/>内容识别引擎]
+        DB[特征库<br/>敏感数据指纹]
+        ENGINE[检测引擎<br/>正则/关键词/机器学习]
+    end
+
+    subgraph "响应处置"
+        BLOCK[阻断设备<br///防火墙联动]
+        ALERT[告警系统<br/>邮件/短信/Slack]
+        LOG[审计日志<br///合规留存]
+    end
+
+    TAP -->|镜像流量| DLP
+    DLP -->|特征匹配| DB
+    DLP -->|深度检测| ENGINE
+    ENGINE -->|命中策略| BLOCK
+    ENGINE -->|告警事件| ALERT
+    ENGINE -->|审计记录| LOG
+```
+
+### DLP检测策略
+
+| 策略类型 | 检测规则 | 响应动作 |
+|----------|----------|----------|
+| **敏感文件识别** | 身份证号、银行卡号、手机号 | 阻断+告警 |
+| **代码外泄** | Git仓库URL、API密钥 | 阻断+告警 |
+| **设计图纸** | CAD文件特征、蓝图格式 | 阻断+审计 |
+| **商业机密** | 合同模板、财务数据 | 阻断+告警+日志 |
+| **个人隐私** | 社保号、护照号、驾照号 | 阻断+告警 |
+
+### DLP服务器配置
+
+```bash
+# DLP服务器网络配置
+ip addr: 192.168.0.200/24
+gateway: 192.168.0.254
+management: 192.168.0.200:8443
+
+# 监控网卡配置
+interface: eth1 (镜像流量入口)
+mode: Passive (只读不转发)
+
+# 联动防火墙配置
+firewall_ip: 192.168.100.254
+api_key: dlp_api_key_xxxxx
+action: block/allow
+```
+
+### 审计日志保留
+
+| 日志类型 | 保留期限 | 存储位置 |
+|----------|----------|----------|
+| 阻断日志 | 1年 | 本地存储 + 异地备份 |
+| 告警日志 | 1年 | SIEM平台 |
+| 审计追溯 | 7年 | 归档存储 |
+| 合规报表 | 永久 | 法务合规系统 |
