@@ -68,7 +68,7 @@ graph TB
     IPS --> CORE2
 
     %% 核心层互联
-    CORE1 <==>&lt;==&gt; CORE2
+    CORE1 <--> CORE2
     CORE1 --> TAP
     CORE2 --> TAP
     TAP --> MON
