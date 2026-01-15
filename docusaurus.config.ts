@@ -15,14 +15,14 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: 'https://hecoinfo.github.io',
+  url: 'https://stars-labs.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: '/full-it-infra-design-docs/',
 
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'hecoinfo', // Usually your GitHub org/user name.
+  organizationName: 'stars-labs', // Usually your GitHub org/user name.
   projectName: 'full-it-infra-design-docs', // Usually your repo name.
   deploymentBranch: 'gh-pages',
 
