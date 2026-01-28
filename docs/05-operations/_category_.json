@@ -1,0 +1,8 @@
+{
+  "label": "运维与交付",
+  "position": 5,
+  "link": {
+    "type": "generated-index",
+    "description": "桌面标准化 (SOE)、SOP 操作手册与灾难恢复预案。"
+  }
+}
