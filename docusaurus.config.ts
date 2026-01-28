@@ -99,11 +99,11 @@ const config: Config = {
             },
             {
               label: 'IT 基础架构设计',
-              to: '/docs/01-core-design/it-infra-design',
+              to: '/docs/core-design/it-infra-design',
             },
             {
               label: '交换机选型',
-              to: '/docs/02-hardware/switch-selection',
+              to: '/docs/hardware/switch-selection',
             },
           ],
         },
