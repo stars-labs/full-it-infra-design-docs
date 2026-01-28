@@ -16,7 +16,7 @@ sidebar_position: 1
         *   自动同步生成企业邮箱 (Mailcow) 和 即时通讯 (Mattermost) 账号。
         *   生成临时密码并通过短信/个人邮箱发送给员工。
     2.  **设备准备**:
-        *   从库存提取电脑（Mac/Windows），根据岗位执行 **SOE 初始化** (参考 [桌面标准化规范](../05-operations/soe-standard))。
+        *   从库存提取电脑（Mac/Windows），根据岗位执行 **SOE 初始化** (参考 [桌面标准化规范](../05-operations/soe-standard.md))。
         *   在 **Snipe-IT** 中进行资产登记，状态更为“待发放”。
         *   在 **Fleet** 中注册设备，确保已安装 Agent。
 
