@@ -69,7 +69,7 @@ export default function Home(): ReactNode {
               <FeatureCard
                 title="网络架构设计"
                 description="三层网络架构设计，包括VLAN划分、IP规划与路由策略。"
-                link="/docs/architecture/network-architecture"
+                link="/docs/architecture/network-design"
                 linkText="查看详情"
               />
               <FeatureCard

@@ -23,14 +23,14 @@ sidebar_position: 1
 > 为您的数据中心选择最合适的物理设备。
 > *   **计算**: 服务器配置与选型指南。
 > *   **网络**: 核心/接入交换机与路由器推荐。
-> *   **存储**: NAS 与 SAN 存储硬件方案。
+> *   **存储**: [NAS 与 SAN 存储硬件方案](hardware/nas-selection)。
 > *   **机房**: 电力、冷却与机柜规划。
 
-### [3. 架构方案 (Architecture)](architecture/network-architecture)
+### [3. 架构方案 (Architecture)](architecture/network-design)
 > **技术实施与落地**
 > 
 > 具体的实施细节与运维策略。
-> *   **[网络架构](architecture/network-architecture)**: VLAN 划分、VPN 组网与路由策略。
+> *   **[网络架构](architecture/network-design)**: VLAN 划分、VPN 组网与路由策略。
 > *   **[安全架构](architecture/security-architecture)**: 零信任模型、防火墙策略与合规性。
 > *   **[存储与备份](architecture/storage-solution)**: 数据生命周期管理与灾备演练。
 
