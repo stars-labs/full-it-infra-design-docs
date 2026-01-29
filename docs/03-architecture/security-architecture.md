@@ -181,10 +181,10 @@ authorization vlan 30
 
 ```mermaid
 graph LR
-    Dev[IT 管理员] -->|提交策略代码| Git[GitLab 代码库]
-    Git -->|CI/CD| Fleet[FleetDM Server]
-    Fleet -->|推送配置| Agent[终端设备 (Fleet Agent)]
-    Agent -->|上报状态| Fleet
+    Dev[IT 管理员] -- "提交策略代码" --> Git[GitLab 代码库]
+    Git -- "CI/CD" --> Fleet[FleetDM Server]
+    Fleet -- "推送配置" --> Agent["终端设备 (Fleet Agent)"]
+    Agent -- "上报状态" --> Fleet
 ```
 
 > **最佳实践**：所有终端策略均作为代码 (`infrastructure-as-code`) 存储在 Git 仓库中，通过 Pull Request 进行变更审批，彻底告别 AD 域控的“黑盒”操作。
