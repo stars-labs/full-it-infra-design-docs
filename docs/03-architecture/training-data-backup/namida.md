@@ -61,12 +61,12 @@ namida get --server 192.168.1.100:5266 --rate 100M dataset.tar.gz
 graph RL
     subgraph "文件服务器 (有公网IP)"
         Server[Server]
-        ProblemServer[问题:<br>- 不知道客户端当前IP]
+        ProblemServer["问题:<br/>- 不知道客户端当前IP"]
     end
 
     subgraph "员工电脑 (NAT后，可监听)"
-        Client[Client<br>监听: 5266]
-        ProblemClient[问题:<br>- 无固定IP<br>- IP动态变化]
+        Client["Client<br/>监听: 5266"]
+        ProblemClient["问题:<br/>- 无固定IP<br/>- IP动态变化"]
     end
 
     Server --"UDP数据通道 (发起连接)"--> Client

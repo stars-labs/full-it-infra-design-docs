@@ -21,7 +21,7 @@ sidebar_position: 1
 graph LR
     subgraph "员工电脑 (NAT/防火墙后)"
         Client[192.168.1.x]
-        Note1[❌无公网IP<br>❌无法监听端口]
+        Note1["❌无公网IP<br/>❌无法监听端口"]
     end
 
     subgraph "文件服务器 (有公网IP)"
@@ -58,10 +58,10 @@ graph LR
 graph TD
     Start[开始备份] --> CheckNet{是否在办公网络？}
     CheckNet --"是"--> CheckNamida{追求极致速度？}
-    CheckNet --"否"--> UseBBCP[使用 bbcp 推送<br>(NAT穿透)]
+    CheckNet --"否"--> UseBBCP["使用 bbcp 推送<br/>(NAT穿透)"]
     
-    CheckNamida --"是"--> UseNamida[Namida / Tsunami UDP<br>(10+ GB/s)]
-    CheckNamida --"否"--> UseBBCP2[bbcp 推送<br>(运维简单)]
+    CheckNamida --"是"--> UseNamida["Namida / Tsunami UDP<br/>(10+ GB/s)"]
+    CheckNamida --"否"--> UseBBCP2["bbcp 推送<br/>(运维简单)"]
 ```
 
 ### 快速推荐
