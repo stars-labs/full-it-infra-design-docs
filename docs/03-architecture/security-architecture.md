@@ -149,6 +149,46 @@ authorization vlan 30
 | 应用程序 | 每季度 | 72小时内 |
 | 浏览器 | 每月 | 48小时内 |
 
+## 现代化终端管理：FleetDM (替代 AD GPO)
+
+我们采用 **FleetDM (基于 osquery)** 作为下一代终端管理平台，通过 **配置描述文件 (Configuration Profiles)** 替代传统的 Active Directory 组策略对象 (GPO)。
+
+### 为什么选择 FleetDM 取代 AD？
+
+| 特性 | 传统 AD (GPO) | FleetDM (MDM + osquery) | 优势 |
+| :--- | :--- | :--- | :--- |
+| **适用范围** | 仅 Windows 友好 | **macOS / Windows / Linux 全平台** | 统一管理所有类型终端 |
+| **连接性** | 必须在内网域控 | **互联网直连 (Zero Trust)** | 完美支持 WFH / 移动办公 |
+| **可见性** | 被动推送，状态未知 | **实时查询 (Live Query)** | 秒级获取任意系统状态 (SQL) |
+| **配置方式** | 复杂的 GUI / XML | **声明式代码 (YAML/JSON)** | 支持 GitOps / CI/CD 流水线 |
+| **响应速度** | 需等待重连域控 | **准实时** | 立即执行脚本或策略 |
+
+### 配置管理策略 (CSPs)
+
+通过 FleetDM 下发标准化的 CSP (Configuration Service Provider) 策略，实现与 AD GPO 同等甚至更强的管控能力：
+
+1.  **安全基线强制**：
+    *   强制开启磁盘加密 (BitLocker / FileVault)
+    *   强制开启防火墙
+    *   强制设置屏保密码和自动锁屏时间
+2.  **软件分发与限制**：
+    *   自动安装必备软件 (Chrome, Slack, Zoom)
+    *   禁用黑名单软件 (P2P 工具, 盗版软件)
+3.  **系统更新管理**：
+    *   强制 macOS / Windows 更新并在截止日期前重启
+
+### GitOps 工作流
+
+```mermaid
+graph LR
+    Dev[IT 管理员] -->|提交策略代码| Git[GitLab 代码库]
+    Git -->|CI/CD| Fleet[FleetDM Server]
+    Fleet -->|推送配置| Agent[终端设备 (Fleet Agent)]
+    Agent -->|上报状态| Fleet
+```
+
+> **最佳实践**：所有终端策略均作为代码 (`infrastructure-as-code`) 存储在 Git 仓库中，通过 Pull Request 进行变更审批，彻底告别 AD 域控的“黑盒”操作。
+
 ## 应用安全
 
 ### 身份认证体系
