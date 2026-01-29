@@ -92,6 +92,22 @@ graph LR
 | 输出PDU | C13×18, C19×6 | 设备供电 |
 | PDU功能 | 电流监控、远程管理 | 电源管理 |
 
+### 机柜设计资源与下载
+
+为方便机房规划与布线设计，以下整理了主流机柜的 CAD 图纸及技术规格书：
+
+| 资源类别 | 内容描述 | 格式 | 下载/参考链接 |
+| :--- | :--- | :--- | :--- |
+| **CAD/3D 模型** | 42U 标准服务器机柜 DWG 设计图 | DWG | [宏图网下载](https://www.hongtucad.com/) |
+| | 通用服务器机架 3D 模型库 (多种格式) | STEP/STL | [TraceParts 资源库](https://www.traceparts.com/) |
+| | 机柜式服务器工业 3D 模型 | STEP | [爱给网免费下载](https://www.aigei.com/) |
+| **技术规格书** | 图腾 (TOTEN) PF 系列机柜说明书 | PDF | [图腾官方下载](http://www.totenchina.com/) |
+| | 维谛 (Vertiv) E 系列机柜技术参数 | PDF | [维谛技术官网](https://www.vertiv.com/) |
+| | 胜为 (Shengwei) C 系列机柜规格书 | PDF | [胜为官网资源](http://www.newshengwei.com/) |
+| **行业标准** | 整机柜服务器通用规范 | PDF | [开放计算委员会 (OCTC)](http://www.octc.net/) |
+
+> **提示**：下载 DWG 或 STEP 文件后，建议使用 AutoCAD 或 SolidWorks 进行二次开发与机房位深度规划。
+
 ## 供电系统
 
 ### 供电架构
