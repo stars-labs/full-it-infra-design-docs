@@ -23,7 +23,7 @@ graph TB
 
     subgraph "核心接入区[RADIUS认证+审计]"
         CORE_SWITCH[8口PoE交换机<br/>USW-Lite-8-PoE / SG2008P]
-        RADIUS[RADIUS服务器<br/>FreeIPA/Casdoor]
+        RADIUS[RADIUS服务器<br/>Casdoor]
         TAP[流量采集设备<br/>Port Mirror]
         DLP[DLP审计服务器<br/>数据防泄漏]
         MON[监控服务器<br/>日志分析]

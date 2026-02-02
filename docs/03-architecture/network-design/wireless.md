@@ -20,8 +20,8 @@ graph LR
     end
 
     subgraph "认证服务器"
-        RADIUS[RADIUS服务器<br/>FreeIPA]
-        LDAP[LDAP目录]
+        RADIUS[RADIUS服务器<br/>Casdoor]
+        LDAP[Casdoor数据库]
     end
 
     USER -->|WiFi 802.1X| AP
@@ -31,24 +31,37 @@ graph LR
     RADIUS -->|查询| LDAP
 ```
 
-### FreeIPA RADIUS配置
+### Casdoor RADIUS配置
 
 ```bash
-# 安装FreeIPA
-ipa-server-install --hostname=auth.example.com \
-  --realm=EXAMPLE.COM \
-  --domain=example.com
+# 安装Casdoor
+./deploy/docker-compose.yml
 
-# 配置RADIUS客户端
-ipa-client-install --enable-dns
-
-# 配置RADIUS策略
-ipa radiusproxy-add freeipa-proxy --server=auth.example.com --secret=your_secret
-
-# 添加认证策略
-ipa hostgroup-add --desc="核心区设备" core-devices
-ipa hostgroup-add-member core-devices --hosts=ap1.example.com
-ipa netgroup-add core-network --desc="核心网络"
+# 配置RADIUS认证
+# 在Casdoor管理界面中:
+# 1. 创建应用程序 (App)
+#    - Name: starslabs-wifi
+#    - Redirect URLs: http://auth.example.com/callback
+#    - Client ID, Client Secret: 自动生成
+# 2. 配置RADIUS服务器
+#    - 使用第三方RADIUS服务器 (如FreeRADIUS)
+#    - 配置FreeRADIUS连接Casdoor进行认证
+#
+# FreeRADIUS配置 (/etc/raddb/sites-available/default):
+#
+# authenticate {
+#     Auth-Type CASDOOR {
+#         perl
+#     }
+# }
+#
+# /etc/raddb/modules/perl:
+#     perl_module = /etc/raddb/casdoor_auth.pl
+#
+# 3. 部署RADIUS客户端 (AP/交换机)
+#    - RADIUS Server: 192.168.1.100
+#    - Port: 1812 (认证), 1813 (记账)
+#    - Shared Secret: your_shared_secret
 ```
 
 ## 无线网络设计
