@@ -19,7 +19,7 @@ sidebar_position: 3
 | 类别 | 推荐方案 | 替代方案 | 选型理由 |
 | :--- | :--- | :--- | :--- |
 | **企业网盘/文档** | **Nextcloud** | Seafile | 功能最全，支持多人在线协同编辑 (配合 OnlyOffice)，插件生态丰富。 |
-| **即时通讯 (IM)** | **Zulip** | Mattermost, Matrix | 话题(thread)式架构适合AI总结，24.4K Stars。**注意：移动推送需自建或付费** |
+| **即时通讯 (IM)** | **Mattermost** | Zulip, Matrix | 体验最接近Slack，21K Stars，**官方提供AI插件**，移动推送可自建免费（仅需Apple年费$99）。 |
 | **视频会议** | **Jitsi Meet** | BigBlueButton | 架构简单，无需客户端，浏览器即用，WebRTC技术成熟。 |
 | **企业邮箱** | **Mailcow** | iRedMail | 基于 Docker 的完整邮件套件，部署维护最简单，自带反垃圾/杀毒。 |
 | **知识库/Wiki** | **AppFlowy** | Outline, BookStack | AI原生工作区，67.9K Stars，原生集成AI写作/协作，支持本地LLM (Ollama)，Flutter+Rust架构体验优异。 |
@@ -28,15 +28,17 @@ sidebar_position: 3
 
 | 方案 | AI总结能力 | 移动推送 | 成本说明 | 适用场景 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Zulip** | ⭐⭐⭐ 话题式结构AI易总结 | 需自建推送服务或付费给Zulip Cloud | 自建推送：维护成本高；云服务：按用户收费 | 深度讨论、AI知识沉淀 |
-| **Mattermost** | ⭐⭐⭐ 官方AI插件，频道总结 | 可自建推送网关或付费 | 自建：需Apple开发者账号($99/年)；企业版：付费 | 企业级、需官方AI支持 |
-| **Matrix/Element** | ⭐⭐ 需自建AI Bot | 完全自托管，免费开源 | 零商业成本，需自行维护推送网关 | 隐私优先、零成本 |
+| **Zulip** | ⭐⭐⭐ 话题式结构AI易总结 | **官方不支持自建**，只能付费使用Zulip Cloud推送服务 | 强制商业服务，按活跃用户收费，无免费自建方案 | 深度讨论、能接受付费服务 |
+| **Mattermost** | ⭐⭐⭐ 官方AI插件，支持频道聊天总结 | 可自建推送网关（开源）或付费企业版 | 自建：完全免费 + Apple开发者账号$99/年；云服务：付费 | 企业级、要官方AI支持、零推送成本 |
+| **Matrix/Element** | ⭐⭐ 需自建AI Bot | 完全自托管开源（Sygnal推送网关） | 零商业成本 + Apple开发者账号$99/年 | 隐私优先、零成本、技术能力强 |
 | **Rocket.Chat** | ⭐⭐ 社区AI插件 | 可自建或付费 | 社区版免费，企业功能付费 | 功能全面、生态丰富 |
 
 **选型建议：**
-- **要AI总结+零推送成本**：选择Matrix，自建AI Bot调用Ollama
-- **要官方AI+企业支持**：选择Mattermost，接受推送自建成本
-- **要话题式+AI友好**：选择Zulip，评估推送服务成本
+- **要AI总结+零推送成本**：**Mattermost**（官方AI插件 + 自建免费推送）
+- **要零成本+隐私优先**：**Matrix**（自建AI Bot + Sygnal推送网关，技术门槛高）
+- **要话题式+接受付费**：**Zulip**（AI友好，但移动推送强制收费，无自建方案）
+
+**重要提醒：** iOS推送无论选哪个方案都需Apple开发者账号$99/年（Apple强制收费，与IM软件无关）。Android推送所有方案均免费。
 
 ## 3. 研发与交付 (DevOps)
 
@@ -84,7 +86,7 @@ graph TD
     end
 
     subgraph "应用层"
-        Office[Nextcloud/Zulip/Mailcow]
+        Office[Nextcloud/Mattermost/Mailcow]
         DevOps[GitLab/Harbor/SonarQube]
         Biz[Odoo ERP]
     end
