@@ -43,6 +43,7 @@ sidebar_position: 3
 | **服务拨测** | **Uptime Kuma** | Blackbox Exp | 界面美观，配置简单，适合展示对外的 Status Page。 |
 | **资产管理 (ITAM)**| **Snipe-IT** | GLPI | 专注于资产全生命周期管理，界面现代，API 完善。 |
 | **工单系统 (Helpdesk)**| **Zammad** | OTRS | 支持多渠道 (邮件/Web/Chat) 接入，界面交互体验极佳。 |
+| **AI原生统一监控** | **SigNoz** | Grafana+Prometheus | OpenTelemetry原生，内置AI异常检测、智能告警根因分析，日志/指标/追踪一站式。 |
 
 ## 5. 基础架构服务 (Infrastructure)
 
