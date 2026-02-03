@@ -19,7 +19,7 @@ sidebar_position: 3
 | 类别 | 推荐方案 | 替代方案 | 选型理由 |
 | :--- | :--- | :--- | :--- |
 | **企业网盘/文档** | **Nextcloud** | Seafile | 功能最全，支持多人在线协同编辑 (配合 OnlyOffice)，插件生态丰富。 |
-| **即时通讯 (IM)** | **Mattermost** | Rocket.Chat | 体验最接近 Slack，Go语言后端性能优异，支持私有化部署。 |
+| **即时通讯 (IM)** | **Zulip** | Mattermost | 话题(thread)式架构天然适合AI总结，24.4K Stars，异步讨论模式更适合知识沉淀。 |
 | **视频会议** | **Jitsi Meet** | BigBlueButton | 架构简单，无需客户端，浏览器即用，WebRTC技术成熟。 |
 | **企业邮箱** | **Mailcow** | iRedMail | 基于 Docker 的完整邮件套件，部署维护最简单，自带反垃圾/杀毒。 |
 | **知识库/Wiki** | **AppFlowy** | Outline, BookStack | AI原生工作区，67.9K Stars，原生集成AI写作/协作，支持本地LLM (Ollama)，Flutter+Rust架构体验优异。 |
@@ -70,7 +70,7 @@ graph TD
     end
 
     subgraph "应用层"
-        Office[Nextcloud/Mattermost/Mailcow]
+        Office[Nextcloud/Zulip/Mailcow]
         DevOps[GitLab/Harbor/SonarQube]
         Biz[Odoo ERP]
     end
