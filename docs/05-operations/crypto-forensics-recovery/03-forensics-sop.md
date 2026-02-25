@@ -491,4 +491,4 @@ echo "校验和: $(cat ../${CASE_ID}_evidence.tar.gz.sha256)"
 
 ---
 
-**下一步**: [安全与合规](./04-security-compliance) - 了解证据处理和合规要求
+**下一步**: [安全与合规](./security-compliance) - 了解证据处理和合规要求

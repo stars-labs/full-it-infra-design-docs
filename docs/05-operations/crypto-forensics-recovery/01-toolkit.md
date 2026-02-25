@@ -480,4 +480,4 @@ echo "  sudo chown \$USER:\$USER /forensics/cases"
 
 ---
 
-**下一步**: [目标文件与特征](./02-target-patterns) - 了解要查找什么
+**下一步**: [目标文件与特征](./target-patterns) - 了解要查找什么
