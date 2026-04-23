@@ -1,0 +1,8 @@
+{
+  "label": "架构方案",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "网络、安全、存储与备份的具体架构实施方案。"
+  }
+}
