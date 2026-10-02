@@ -9,7 +9,7 @@ sidebar:
 ## 设计原则
 
 - **分区管理**：核心区（认证+审计）与普通区（普通WiFi）分离
-- **RADIUS认证**：核心区802.1X统一认证
+- **FreeRADIUS认证**：核心区 802.1X 统一认证与计费
 - **安全审计**：核心区Port Mirror + DLP流量审计
 - **简洁实用**：50人规模，适度简化
 - **访客隔离**：访客网络与办公网络完全隔离
@@ -25,7 +25,8 @@ graph TB
 
     subgraph "核心接入区[RADIUS认证+审计]"
         CORE_SWITCH[8口PoE交换机<br/>USW-Lite-8-PoE / SG2008P]
-        RADIUS[RADIUS服务器<br/>Casdoor]
+        RADIUS[FreeRADIUS<br/>802.1X / Accounting]
+        IDP[Casdoor<br/>身份源]
         TAP[流量采集设备<br/>Port Mirror]
         DLP[DLP审计服务器<br/>数据防泄漏]
         MON[监控服务器<br/>日志分析]
@@ -56,6 +57,7 @@ graph TB
 
     %% 核心区连接
     CORE_SWITCH --> RADIUS
+    RADIUS --> IDP
     CORE_SWITCH --> TAP
     TAP --> DLP
     TAP --> MON
@@ -105,7 +107,7 @@ graph TB
 | 普通交换机 | TL-SG1005D | 1 | ¥300 | ¥300 | 普通区接入 |
 | 核心区AP | UniFi U6-LR | 2 | ¥1500 | ¥3000 | 核心区802.1X WiFi |
 | 普通区AP | UniFi U6-Lite | 2 | ¥800 | ¥1600 | 普通WiFi |
-| RADIUS服务器 | 虚拟机 | 1 | - | - | 统一认证 |
+| FreeRADIUS服务器 | 虚拟机 | 1 | - | - | 802.1X 认证与计费 |
 | DLP服务器 | 虚拟机 | 1 | - | - | 流量审计 |
 | NAS存储 | 群晖DS220+ | 1 | ¥3000 | ¥3000 | 文件共享 |
 

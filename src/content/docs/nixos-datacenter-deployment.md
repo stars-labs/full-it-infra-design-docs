@@ -94,7 +94,7 @@ graph TB
 
 | 主机名 | 角色 | 硬件配置 | 运行服务 | VLAN |
 |--------|------|----------|----------|------|
-| nixos-mgmt | 管理/监控节点 | 16C/64GB/500GB NVMe | Prometheus、Grafana、Loki、Alertmanager、CoreDNS、跳板机 | MGMT(10), MON(40) |
+| nixos-mgmt | 管理/监控节点 | 16C/64GB/500GB NVMe | Parseable、Prometheus、Alertmanager、CoreDNS、跳板机 | MGMT(10), MON(40) |
 | nixos-app | 应用服务节点 | 32C/128GB/1TB NVMe | 应用服务、反向代理、CI/CD Runner | SVC(20), MGMT(10) |
 | nixos-data | 数据/存储节点 | 16C/128GB/2TB NVMe + 8TB HDD RAID | PostgreSQL、Restic 备份、对象存储 | STOR(30), SVC(20) |
 
@@ -983,8 +983,7 @@ ssss-combine -t 2 -q
 graph TB
     subgraph "nixos-mgmt"
         M_PROM[Prometheus<br/>nspawn]
-        M_GRAF[Grafana<br/>nspawn]
-        M_LOKI[Loki<br/>nspawn]
+        M_PARSEABLE[Parseable<br/>nspawn]
         M_ALERT[Alertmanager<br/>nspawn]
         M_DNS[CoreDNS<br/>nspawn]
     end
@@ -1112,8 +1111,7 @@ sequenceDiagram
 | PostgreSQL | 4 核 | 16 GB | 500 GB | STOR(30) |
 | 应用服务 | 8 核 | 32 GB | 100 GB | SVC(20) |
 | Prometheus | 2 核 | 8 GB | 200 GB | MON(40) |
-| Grafana | 1 核 | 2 GB | 10 GB | MON(40) |
-| Loki | 2 核 | 8 GB | 500 GB | MON(40) |
+| Parseable | 4 核 | 8 GB | 按对象存储容量 | MON(40) |
 | CoreDNS | 1 核 | 512 MB | 1 GB | MGMT(10) |
 | 反向代理 | 2 核 | 4 GB | 10 GB | SVC(20) |
 | Restic 备份 | 2 核 | 4 GB | 不限 | STOR(30) |
@@ -1221,7 +1219,7 @@ networking.nftables = {
           udp dport 51820 accept
 
           # 节点间通信（按角色开放）
-          # nixos-mgmt: Prometheus, Grafana, Loki, Alertmanager
+          # nixos-mgmt: Parseable, Prometheus, Alertmanager
           iifname "br-mon" tcp dport { 9090, 3000, 3100, 9093 } accept
 
           # 日志
@@ -1331,7 +1329,7 @@ containers.coredns = {
 |----------|--------|----------|----------|
 | 内部服务 TLS | 1 年 | 内部 CA | agenix 加密 |
 | PostgreSQL SSL | 1 年 | 内部 CA | agenix 加密 |
-| Grafana HTTPS | 1 年 | 内部 CA | agenix 加密 |
+| Parseable HTTPS | 1 年 | 内部 CA | agenix 加密 |
 | WireGuard 密钥 | 无过期 | 本地生成 | agenix 加密 |
 
 ## Secrets 管理
@@ -1424,7 +1422,7 @@ in
   # TLS 证书私钥
   "tls-internal-key.age".publicKeys = allAdmins ++ allHosts;
 
-  # Grafana admin 密码
+  # Parseable 管理员凭据
   "grafana-admin.age".publicKeys = allAdmins ++ [ nixos-mgmt ];
 
   # Restic 备份密码
@@ -1451,7 +1449,7 @@ age.secrets.pg-password = {
 | WireGuard 密钥 | 6 个月 | 重新生成 + agenix 更新 | 双人审批 |
 | TLS 证书 | 1 年 | 内部 CA 重签 + agenix 更新 | 双人审批 |
 | PostgreSQL 密码 | 3 个月 | agenix 更新 + 滚动重启 | 双人审批 |
-| Grafana 密码 | 6 个月 | agenix 更新 | 双人审批 |
+| Parseable 管理员凭据 | 6 个月 | agenix 更新 | 双人审批 |
 | LUKS 恢复密钥 | 1 年 | Shamir 重新分割 | 三人到场 |
 
 ## 虚拟化扩展（microVM）
@@ -1522,14 +1520,13 @@ graph TB
         NE2[node_exporter<br/>nixos-app]
         NE3[node_exporter<br/>nixos-data]
         PGE[postgres_exporter<br/>nixos-data]
-        PROMTAIL1[promtail<br/>nixos-app]
-        PROMTAIL2[promtail<br/>nixos-data]
+        LOG1[OpenTelemetry Collector / Fluent Bit<br/>nixos-app]
+        LOG2[OpenTelemetry Collector / Fluent Bit<br/>nixos-data]
     end
 
     subgraph "nixos-mgmt 监控容器"
         PROM[Prometheus<br/>指标存储]
-        LOKI[Loki<br/>日志存储]
-        GRAF[Grafana<br/>可视化]
+        PARSEABLE[Parseable<br/>日志与 SQL 分析]
         ALERT[Alertmanager<br/>告警]
     end
 
@@ -1542,17 +1539,15 @@ graph TB
     NE2 -->|:9100| PROM
     NE3 -->|:9100| PROM
     PGE -->|:9187| PROM
-    PROMTAIL1 -->|:3100| LOKI
-    PROMTAIL2 -->|:3100| LOKI
+    LOG1 -->|HTTP / OTLP| PARSEABLE
+    LOG2 -->|HTTP / OTLP| PARSEABLE
 
-    PROM --> GRAF
-    LOKI --> GRAF
     PROM --> ALERT
     ALERT --> EMAIL
     ALERT --> WEBHOOK
 
     style PROM fill:#ffcccc,stroke:#ff0000,stroke-width:2px
-    style GRAF fill:#cce5ff,stroke:#0066cc,stroke-width:2px
+    style PARSEABLE fill:#cce5ff,stroke:#0066cc,stroke-width:2px
 ```
 
 ### 监控指标阈值
@@ -1580,13 +1575,13 @@ graph TB
 
 | 审计源 | 收集方式 | 存储位置 | 保留期限 |
 |--------|----------|----------|----------|
-| Git 提交日志 | GitHub API | Loki | 永久 |
-| nixos-rebuild 日志 | systemd journal | Loki | 1 年 |
-| SSH 登录日志 | auditd + journal | Loki | 1 年 |
-| nftables 防火墙日志 | journal | Loki | 6 个月 |
-| 容器生命周期 | systemd journal | Loki | 1 年 |
-| CI/CD 部署日志 | GitHub Actions | Loki + GitHub | 1 年 |
-| 物理门禁日志 | 门禁系统 API | Loki | 1 年 |
+| Git 提交日志 | GitHub API | Parseable | 永久 |
+| nixos-rebuild 日志 | systemd journal | Parseable | 1 年 |
+| SSH 登录日志 | auditd + journal | Parseable | 1 年 |
+| nftables 防火墙日志 | journal | Parseable | 6 个月 |
+| 容器生命周期 | systemd journal | Parseable | 1 年 |
+| CI/CD 部署日志 | GitHub Actions | Parseable + GitHub | 1 年 |
+| 物理门禁日志 | 门禁系统 API | Parseable | 1 年 |
 
 ## 部署流水线
 
@@ -1868,8 +1863,8 @@ services.restic.backups = {
 ### 监控审计验收
 
 - [ ] Prometheus 采集所有节点和容器指标
-- [ ] Grafana Dashboard 展示正常，告警规则触发正确
-- [ ] Loki 收集所有主机和容器日志
+- [ ] Parseable 查询、字段解析和告警规则正常
+- [ ] Parseable 收集所有主机和容器日志
 - [ ] 审计日志完整记录 SSH 登录、配置变更、部署操作
 
 ### 灾难恢复验收

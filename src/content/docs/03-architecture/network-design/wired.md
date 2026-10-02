@@ -55,13 +55,14 @@ port-mirroring to observe-port 1 outbound GigabitEthernet0/0/3
 | GE0/0/2 | 办公PC 2 | 文件传输、网页 | 90天 |
 | GE0/0/3 | 核心AP | 无线流量 | 90天 |
 | GE0/0/6 | 文件服务器 | SMB/NFS访问 | 180天 |
-| GE0/0/7 | 认证服务器 | RADIUS认证日志 | 180天 |
+| GE0/0/7 | FreeRADIUS | RADIUS认证与计费日志 | 180天 |
 
 ## 交换机 RADIUS 配置
 
 ```bash
 # TP-Link SG2008P
 radius-server ip 192.168.1.100 port 1812 key your_shared_secret
+radius-server accounting ip 192.168.1.100 port 1813 key your_shared_secret
 dot1x authentication-method eap
 authentication dot1x domain example.com
 

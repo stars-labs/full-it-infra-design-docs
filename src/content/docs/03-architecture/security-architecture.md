@@ -1,10 +1,10 @@
 ---
-title: "安全架构设计"
+title: "安全架构设计（2026）"
 sidebar:
   order: 7
 ---
 
-# 安全架构设计
+# 安全架构设计（2026）
 
 ## 设计原则
 
@@ -12,7 +12,7 @@ sidebar:
 - **最小权限**：按需授权，减少攻击面
 - **零信任架构**：持续验证，不信任任何请求
 - **合规性**：满足等级保护、行业合规要求
-- **可审计**：全流量记录，可追溯分析
+- **可审计**：身份、设备、管理和关键数据访问可追溯；不默认保存所有业务明文流量
 
 ## 安全架构总览
 
@@ -132,7 +132,7 @@ graph LR
 ### 终端准入控制
 
 ```bash
-# 802.1X认证配置
+# 802.1X认证配置（FreeRADIUS）
 dot1x authentication-method EAP
 
 # 认证域配置
@@ -151,9 +151,9 @@ authorization vlan 30
 | 应用程序 | 每季度 | 72小时内 |
 | 浏览器 | 每月 | 48小时内 |
 
-## 现代化终端管理：FleetDM (替代 AD GPO)
+## 现代化终端管理：FleetDM + 平台原生 MDM
 
-我们采用 **FleetDM (基于 osquery)** 作为下一代终端管理平台，通过 **配置描述文件 (Configuration Profiles)** 替代传统的 Active Directory 组策略对象 (GPO)。
+我们采用 **FleetDM** 作为跨平台资产、查询和合规平台；macOS/Windows 的设备配置优先使用平台原生 MDM，Linux 使用发行版配置管理和 Fleet 的合规检查。Fleet 不等同于 AD、Entra ID 或完整 EDR，也不应被描述为“替代所有 GPO”。
 
 ### 为什么选择 FleetDM 取代 AD？
 
@@ -162,12 +162,12 @@ authorization vlan 30
 | **适用范围** | 仅 Windows 友好 | **macOS / Windows / Linux 全平台** | 统一管理所有类型终端 |
 | **连接性** | 必须在内网域控 | **互联网直连 (Zero Trust)** | 完美支持 WFH / 移动办公 |
 | **可见性** | 被动推送，状态未知 | **实时查询 (Live Query)** | 秒级获取任意系统状态 (SQL) |
-| **配置方式** | 复杂的 GUI / XML | **声明式代码 (YAML/JSON)** | 支持 GitOps / CI/CD 流水线 |
+| **配置方式** | GPO / 平台 MDM | **声明式策略 + IaC** | 支持 GitOps / CI/CD 流水线 |
 | **响应速度** | 需等待重连域控 | **准实时** | 立即执行脚本或策略 |
 
-### 配置管理策略 (CSPs)
+### 配置管理策略
 
-通过 FleetDM 下发标准化的 CSP (Configuration Service Provider) 策略，实现与 AD GPO 同等甚至更强的管控能力：
+通过平台原生 MDM、Ansible/OpenTofu 和 Fleet 合规策略共同实现基线：
 
 1.  **安全基线强制**：
     *   强制开启磁盘加密 (BitLocker / FileVault)
@@ -197,10 +197,10 @@ graph LR
 
 ```mermaid
 graph LR
-    USER[用户] --> CAS[Casdoor]
-    CAS --> LDAP[LDAP]
-    CAS --> OAuth[OAuth2.0]
-    CAS --> OIDC[OIDC]
+    USER[用户] --> CAS[Casdoor OIDC IdP]
+    CAS --> OIDC[OIDC / SAML]
+    CAS --> SSSD[SSSD IdP provider]
+    SSSD --> HOST[Linux PAM/NSS/sudo]
     CAS --> APP1[Odoo]
     CAS --> APP2[Fleet]
     CAS --> APP3[其他应用]
@@ -212,7 +212,7 @@ graph LR
 |------|----------|
 | VPN | 密码 + OTP |
 | 管理员账户 | 密码 + 证书 + OTP |
-| 普通用户 | 密码 + 短信验证码 |
+| 普通用户 | 密码 + TOTP，优先 Passkey |
 | API访问 | Access Token + API Key |
 
 ### Web应用防火墙（WAF）
@@ -244,9 +244,7 @@ graph LR
 cryptsetup luksFormat /dev/sdb1
 cryptsetup luksOpen /dev/sdb1 secure_data
 
-# 数据库加密
-# MySQL: innodb_file_per_table = 1
-# MySQL: innodb_encrypt_tables = ON
+# 数据库：使用支持的透明加密/磁盘加密，并将密钥放在 KMS/secret manager
 
 # 传输加密
 # TLS 1.3 for all services
@@ -260,8 +258,7 @@ audit_log_policy = 'ALL'
 audit_log_connection_policy = 'ALL'
 audit_log_statement_policy = 'ALL'
 
--- 审计日志保留
-expire_logs_days = 90
+-- 审计日志保留：按数据分级、合规要求和存储预算确定
 ```
 
 ## 安全运营

@@ -4,29 +4,32 @@ sidebar:
   order: 1
 ---
 
-# IT 基础架构设计方案
+# IT 基础架构设计方案（2026）
 
 ## 架构概述
 
-本方案采用现代化、模块化的IT基础架构，涵盖身份认证、设备管理、自动化运维与企业资源管理。
+本方案采用以身份为边界、以设备姿态为信号、以自动化交付为默认的模块化 IT 基础架构。所有组件优先选择支持 OIDC、API、基础设施即代码和可观测性的方案。
 
-- **身份认证（IDP）**：采用 Casdoor 作为统一身份认证平台，支持多协议（OAuth2、OIDC、SAML等），实现单点登录与权限管理。
-- **设备管理**：使用 Fleet 进行终端设备统一管理，支持资产盘点、合规检查、远程脚本执行（CSP/PowerShell/Shell）。
-- **自动化运维**：通过 Fleet 平台批量下发和执行 CSP、PowerShell、Shell 脚本，实现自动化运维和合规。
-- **企业资源管理（ERP）**：采用 Odoo 作为 ERP 系统，涵盖财务、人力、采购、库存等核心业务。
+- **身份认证（IdP）**：Casdoor 提供 OIDC/SAML/WebAuthn/TOTP/MFA；Linux 主机通过 SSSD IdP provider 使用统一身份登录。
+- **设备与安全态势**：Fleet 负责 macOS、Windows、Linux 的资产、查询、合规、加密状态、补丁和远程处置；不把它当作目录服务。
+- **远程访问**：使用 NetBird 构建基于 WireGuard 的私有 mesh；通过 OIDC、用户/组同步和策略实现最小权限访问。
+- **自动化交付**：Terraform/OpenTofu 管理基础设施，Ansible 管理主机基线，GitHub Actions 或 GitLab CI 管理变更和发布。
+- **企业资源管理（ERP）**：Odoo 通过 OIDC 集成 Casdoor；财务、HR 和采购数据按职责隔离并纳入备份和审计。
+- **监控与日志**：以 Parseable 作为统一日志分析与监控入口；主机、容器和应用日志通过 OpenTelemetry Collector 或 Fluent Bit 汇聚到 Parseable，指标按需由 Prometheus 采集。
 
 ## 组件说明
 
-### 1. Casdoor（身份认证）
-- 统一用户身份认证与授权，支持多种登录方式（本地、LDAP、第三方OAuth等）。
-- 提供单点登录（SSO）能力，简化用户体验。
-- 与 Odoo、Fleet 等系统集成，实现统一账号体系。
+### 1. Casdoor + SSSD（身份认证）
+- Casdoor 是统一 OIDC IdP；应用使用 Authorization Code + PKCE。
+- SSSD 负责 Linux 的 NSS/PAM、缓存、sudo 与主机访问控制。
+- Fleet 提供设备姿态，不能替代身份认证或目录服务。
 
-### 2. Fleet（设备管理与自动化）
+### 2. Fleet（设备管理与合规）
 - 资产管理：自动发现与管理公司所有终端设备。
 - 合规检查：定期检测设备安全与合规状态。
-- 脚本执行：支持批量下发和执行 CSP、PowerShell、Shell 脚本，提升运维效率。
-- 与 Casdoor 集成，实现基于身份的设备访问控制。
+- 合规：检查 CIS、磁盘加密、补丁和自定义基线。
+- 远程处置：按平台支持锁定、擦除和修复动作。
+- 访问决策：将设备健康状态提供给访问策略，不直接承担用户目录功能。
 
 ### 3. Odoo（ERP）
 - 支持财务、人力、采购、库存、项目等模块。
@@ -37,32 +40,36 @@ sidebar:
 
 ## 典型流程
 
-1. 用户通过 Casdoor 登录，获得统一身份。
-2. 登录后可访问 Odoo（ERP）进行业务操作，或访问 Fleet 进行设备管理。
-3. 运维人员通过 Fleet 平台批量下发脚本，实现自动化运维。
-4. 所有系统均通过 Casdoor 进行权限校验和审计。
+1. 用户通过 Casdoor 完成 OIDC 登录和 MFA。
+2. 应用根据 token 中的稳定 subject、组和本地 RBAC 授权。
+3. Linux 主机由 SSSD 解析身份并执行 PAM、sudo 与访问控制。
+4. Fleet 提供设备合规状态；VPN/网关根据身份组和设备状态放行。
+5. 所有登录、授权、设备处置和管理变更进入集中审计。
 
 ## 架构图
 
 ```mermaid
 graph TD
-    A[用户] -->|SSO| B(Casdoor)
-    B --> C(Odoo)
-    B --> D(Fleet)
-    D --> E[终端设备]
-    D -->|脚本下发| E
+    A[用户] -->|OIDC + MFA| B(Casdoor)
+    B --> C(Odoo / Git / Parseable)
+    B --> D[SSSD]
+    D --> E[Linux 主机]
+    F[Fleet] --> G[设备姿态]
+    G --> H[VPN / 应用访问策略]
+    B --> H
 ```
 
 ## 安全与合规
 - 所有系统均通过 HTTPS 加密通信。
-- Casdoor 统一身份认证，权限最小化原则。
-- Fleet 定期合规检查，自动修复安全隐患。
+- Casdoor 统一身份认证，管理员使用 WebAuthn/FIDO2，权限最小化。
+- Fleet 定期检查加密、补丁和基线；修复动作必须可审计、可回滚。
+- 身份、设备、网络和应用授权分层，任何单一系统故障都不能直接扩大权限。
 - Odoo 业务数据定期备份与权限分级管理。
 
 ## 部署建议
-- 推荐使用容器化部署（如 Docker Compose/Kubernetes），便于扩展与维护。
-- 各组件可独立扩展，支持高可用部署。
-- 建议定期更新各组件，及时修复安全漏洞。
+- 小规模环境使用 rootless Podman Compose 或 Docker Compose；生产集群使用 Kubernetes/K3s 时必须配合 GitOps。
+- 状态组件使用 PostgreSQL、对象存储和加密备份；禁止把生产数据放在临时容器卷。
+- 依赖和镜像固定版本、签名验证、定期升级，并为 Casdoor、SSSD、Fleet 和网关保留回退方案。
 
 ---
 
