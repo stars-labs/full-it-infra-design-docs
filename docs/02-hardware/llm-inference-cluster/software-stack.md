@@ -140,7 +140,7 @@ graph TD
 文档处理: LangChain + Unstructured
 API服务: FastAPI + Uvicorn
 负载均衡: Nginx 1.24
-监控: Prometheus + Grafana
+监控: Parseable + Prometheus
 ```
 
 ### 开发测试

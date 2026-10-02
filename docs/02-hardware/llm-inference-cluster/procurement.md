@@ -54,7 +54,7 @@ sidebar_position: 5
 - [ ] Docker环境(Docker 24.x + Docker Compose)
 - [ ] 推理框架部署(vLLM测试模型加载)
 - [ ] 向量数据库部署(Qdrant健康检查)
-- [ ] 监控部署(Prometheus + Grafana)
+- [ ] 监控部署(Parseable + Prometheus)
 
 ### 性能基准测试
 

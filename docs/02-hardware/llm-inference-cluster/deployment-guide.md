@@ -8,7 +8,7 @@ sidebar_position: 8
 
 ## Docker Compose 完整配置
 
-以下是一个完整的Docker Compose配置,包含vLLM推理服务、Qdrant向量数据库、Nginx反向代理、Prometheus监控和Grafana可视化。
+以下是一个完整的 Docker Compose 配置，包含 vLLM 推理服务、Qdrant 向量数据库、Nginx 反向代理、Prometheus 指标和 Parseable 日志监控。
 
 ```yaml
 version: '3.8'
@@ -64,17 +64,21 @@ services:
       - ./prometheus/data:/prometheus
     command: ['--config.file=/etc/prometheus/prometheus.yml', '--storage.tsdb.path=/prometheus']
 
-  # Grafana可视化
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports: ["3000:3000"]
+  # Parseable 日志与监控
+  parseable:
+    image: parseable/parseable:latest
+    container_name: parseable
+    ports: ["8000:8000"]
     volumes:
-      - ./grafana/data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./parseable/data:/parseable
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    depends_on: [prometheus]
+      - P_ADDR=0.0.0.0:8000
+      - P_STAGING=S3
+      - P_S3_URL=${P_S3_URL}
+      - P_S3_ACCESS_KEY=${P_S3_ACCESS_KEY}
+      - P_S3_SECRET_KEY=${P_S3_SECRET_KEY}
+      - P_S3_REGION=${P_S3_REGION}
+    restart: unless-stopped
 ```
 
 ### 快速启动
@@ -247,7 +251,7 @@ docker run --rm -v qdrant_storage:/data -v $(pwd):/backup alpine tar xzf /backup
 | Nginx HTTP | 80 | Web服务 |
 | Nginx HTTPS | 443 | HTTPS服务 |
 | Prometheus | 9090 | 监控数据 |
-| Grafana | 3000 | 可视化面板 |
+| Parseable | 8000 | 日志查询与监控 |
 
 ## 故障排查
 

@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import { unified } from '@astrojs/markdown-remark';
 import { remarkMermaid } from './plugins/remarkMermaid.js';
 
 export default defineConfig({
@@ -32,23 +33,23 @@ export default defineConfig({
         { label: '项目简介', link: '/' },
         {
           label: '核心设计',
-          autogenerate: { directory: '01-core-design' },
+          items: [{ autogenerate: { directory: '01-core-design' } }],
         },
         {
           label: '硬件选型',
-          autogenerate: { directory: '02-hardware' },
+          items: [{ autogenerate: { directory: '02-hardware' } }],
         },
         {
           label: '系统架构',
-          autogenerate: { directory: '03-architecture' },
+          items: [{ autogenerate: { directory: '03-architecture' } }],
         },
         {
           label: '治理规范',
-          autogenerate: { directory: '04-governance' },
+          items: [{ autogenerate: { directory: '04-governance' } }],
         },
         {
           label: '运维操作',
-          autogenerate: { directory: '05-operations' },
+          items: [{ autogenerate: { directory: '05-operations' } }],
         },
         {
           label: '其他文档',
@@ -83,6 +84,6 @@ export default defineConfig({
     }),
   ],
   markdown: {
-    remarkPlugins: [remarkMermaid],
+    processor: unified({ remarkPlugins: [remarkMermaid] }),
   },
 });
